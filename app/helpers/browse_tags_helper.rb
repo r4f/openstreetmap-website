@@ -85,25 +85,20 @@ module BrowseTagsHelper
 
     lang = key_re.match(key).named_captures()["lang"] || "en"
 
-    # Value could be a semicolon-separated list of Wikipedia pages
-    value.split(";").map do |wiki_value|
-      wiki_value = wiki_value.strip
+    # Match all semicolon-separated Wikipedia links
+    value.split(";").map do |wikipedia_value|
+      wikipedia_value = wikipedia_value.strip
 
-      # In this regex, the prefix matches Wikipedia language codes as above
-      if wiki_value =~ /^([a-z-]{2,12}):(.+)$/i
-        # While accepting any case, the language code in the URL shall be in the standard (lower) capitalization.
-        page_lang = Regexp.last_match(1).downcase
-        title_section = Regexp.last_match(2)
-      else
-        page_lang = lang
-        title_section = wiki_value
-      end
+      value_re = /\A((?<lang>[a-z-]{2,12}):)?(?<title>[^#]+)(#(?<section>.+)?)?\z/oi
+      matches = value_re.match(wikipedia_value)
 
-      title, section = title_section.split("#", 2)
+      page_lang = matches.named_captures()["lang"] || lang
+      title = matches.named_captures()["title"]
+      section = matches.named_captures()["section"]
+
       url = "https://#{page_lang}.wikipedia.org/wiki/#{wiki_encode(title)}?uselang=#{I18n.locale}"
       url += "##{wiki_encode(section)}" if section
-
-      { :url => url, :title => wiki_value }
+      {:url => url, :title => title}
     end
   end
 
