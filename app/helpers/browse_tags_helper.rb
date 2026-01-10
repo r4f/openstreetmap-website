@@ -117,7 +117,7 @@ module BrowseTagsHelper
     # The simple wikidata-tag (this is limited to only one value)
     if key == "wikidata" && value =~ /^[Qq][1-9][0-9]*$/
       return [{
-        :url => "//www.wikidata.org/entity/#{value}?uselang=#{I18n.locale}",
+        :url => "https://www.wikidata.org/entity/#{value}?uselang=#{I18n.locale}",
         :title => value
       }]
     # Key has to be one of the accepted wikidata-tags
@@ -126,7 +126,7 @@ module BrowseTagsHelper
           value =~ /^[Qq][1-9][0-9]*(\s*;\s*[Qq][1-9][0-9]*)*$/
       # Splitting at every semicolon to get a separate hash for each wikidata-ID
       return value.split(";").map do |id|
-        { :title => id, :url => "//www.wikidata.org/entity/#{id.strip}?uselang=#{I18n.locale}" }
+        { :title => id, :url => "https://www.wikidata.org/entity/#{id.strip}?uselang=#{I18n.locale}" }
       end
     end
     nil
@@ -137,7 +137,7 @@ module BrowseTagsHelper
       namespace = Regexp.last_match(1)
       title = Regexp.last_match(2)
       return {
-        :url => "//commons.wikimedia.org/wiki/#{namespace}:#{u title}?uselang=#{I18n.locale}",
+        :url => "https://commons.wikimedia.org/wiki/#{namespace}:#{u title}?uselang=#{I18n.locale}",
         :title => value
       }
     end
