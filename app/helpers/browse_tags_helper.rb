@@ -130,15 +130,22 @@ module BrowseTagsHelper
   end
 
   def wikimedia_commons_link(key, value)
-    if /([a-z_]+:)?wikimedia_commons/.match?(key) && value =~ /^(file|category):([^#]+)/i
-      namespace = Regexp.last_match(1)
-      title = Regexp.last_match(2)
-      return {
-        :url => "https://commons.wikimedia.org/wiki/#{namespace}:#{u title}?uselang=#{I18n.locale}",
-        :title => value
-      }
-    end
-    nil
+    # Allow any simple and secondary Wikimedia Commons link.
+    return nil unless /\A([a-z_:]+:)?wikimedia_commons\z/.match?(key)
+
+    # matches everything up to potential # and throw away the rest.
+    # In case there is a link to an anchor in the Wikimedia Commons page. We will ignore that, as it is not really standard to link to anchors.
+    value_re = /\A(?<namespace>file|category):(?<title>[^#]+)/i
+    return nil unless value_re.match?(value)
+
+    match = value_re.match(value)
+    namespace = match.named_captures()["namespace"].capitalize
+    title = match.named_captures()["title"]
+
+    return {
+      :url => "https://commons.wikimedia.org/wiki/#{namespace}:#{u title}?uselang=#{I18n.locale}",
+      :title => title
+    }
   end
 
   def tag2link_link(key, value)
