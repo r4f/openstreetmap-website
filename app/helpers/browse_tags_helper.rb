@@ -74,8 +74,8 @@ module BrowseTagsHelper
   end
 
   def wikipedia_links(key, value)
-    # This regex should match Wikipedia language codes, everything
-    # from de to zh-classical
+    # This regex should match all Wikipedia language codes, everything
+    # from ab (Abkhaz) to zh-classical (Classical Chinese)
     key_re = /\A([a-z_:]+:)?wikipedia(:(?<lang>[a-zA-Z-]{2,12}))?\z/o
 
     # Accept `wikipedia` and secondary Wikipedia links as keys
