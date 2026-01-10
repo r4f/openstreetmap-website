@@ -81,7 +81,9 @@ module BrowseTagsHelper
     case key
     when "wikipedia", /^(#{SECONDARY_WIKI_PREFIXES}):wikipedia/o
       lang = "en"
-    when /^wikipedia:(\S+)$/
+    # This regex should match Wikipedia language codes, everything
+    # from de to zh-classical
+    when /^wikipedia:([a-z-]{2,12})$/
       lang = Regexp.last_match(1)
     else
       return nil
@@ -91,8 +93,7 @@ module BrowseTagsHelper
     value.split(";").map do |wiki_value|
       wiki_value = wiki_value.strip
 
-      # This regex should match Wikipedia language codes, everything
-      # from de to zh-classical
+      # In this regex, the prefix matches Wikipedia language codes as above
       if wiki_value =~ /^([a-z-]{2,12}):(.+)$/i
         page_lang = Regexp.last_match(1)
         title_section = Regexp.last_match(2)
