@@ -112,24 +112,21 @@ module BrowseTagsHelper
   end
 
   def wikidata_links(key, value)
-    # The simple wikidata-tag (this is limited to only one value)
-    if key == "wikidata" && value =~ /^[Qq][1-9][0-9]*$/
-      return [{
-        :url => "https://www.wikidata.org/entity/#{value}?uselang=#{I18n.locale}",
-        :title => value
-      }]
-    # Accept secondary Wikidata links as keys
-    elsif key =~ /[a-z_]+:wikidata/o &&
-          # Value has to be a semicolon-separated list of wikidata-IDs (whitespaces allowed before and after semicolons)
-          value =~ /^[Qq][1-9][0-9]*(\s*;\s*[Qq][1-9][0-9]*)*$/
-      # Splitting at every semicolon to get a separate hash for each wikidata-ID
-      return value.split(";").map do |id|
-        # In the URL, normalize Wikidata ID to uppercase and without leading and trailing spaces,
-        # while keeping the display text the original value as in the OSM element.
-        { :title => id, :url => "https://www.wikidata.org/entity/#{id.strip.capitalize}?uselang=#{I18n.locale}" }
-      end
+    # Accept simple and secondary Wikidata links as keys
+    return nil unless /\A([a-z_:]+:)?wikidata\z/.match?(key)
+
+    # Value has to be a semicolon-separated list of wikidata-IDs (whitespaces allowed before and after semicolons)
+    # The simple wikidata-tag is limited to only one value, however we don't need to care.
+    value.split(";").map do |wd_id|
+      # normalize
+      wd_id = wd_id.strip.upcase
+
+      # Give up if any of the semicolon-separated values does not meet expectation.
+      return nil unless /\AQ[1-9][0-9]*\z/o.match?(wd_id)
+
+      puts wd_id
+      {:url => "https://wikidata.org/entity/#{wd_id}?uselang=#{I18n.locale}"}
     end
-    nil
   end
 
   def wikimedia_commons_link(key, value)
