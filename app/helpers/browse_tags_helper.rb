@@ -74,20 +74,16 @@ module BrowseTagsHelper
   end
 
   def wikipedia_links(key, value)
+    # This regex should match Wikipedia language codes, everything
+    # from de to zh-classical
+    key_re = /\A([a-z_:]+:)?wikipedia(:(?<lang>[a-zA-Z-]{2,12}))?\z/o
+
+    # Accept `wikipedia` and secondary Wikipedia links as keys
+    return nil unless key_re.match?(key)
     # Some k/v's are wikipedia=http://en.wikipedia.org/wiki/Full%20URL
     return nil if %r{^https?://}i.match?(value)
 
-    case key
-    # Accept `wikipedia` and secondary Wikipedia links as keys
-    when "wikipedia", /^[a-z_]+:wikipedia/o
-      lang = "en"
-    # This regex should match Wikipedia language codes, everything
-    # from de to zh-classical
-    when /^wikipedia:([a-z-]{2,12})$/
-      lang = Regexp.last_match(1)
-    else
-      return nil
-    end
+    lang = key_re.match(key).named_captures()["lang"] || "en"
 
     # Value could be a semicolon-separated list of Wikipedia pages
     value.split(";").map do |wiki_value|
