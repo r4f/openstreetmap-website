@@ -1,10 +1,6 @@
 # frozen_string_literal: true
 
 module BrowseTagsHelper
-  # https://wiki.openstreetmap.org/wiki/Key:wikipedia#Secondary_Wikipedia_links
-  # https://wiki.openstreetmap.org/wiki/Key:wikidata#Secondary_Wikidata_links
-  SECONDARY_WIKI_PREFIXES = "architect|artist|brand|buried|flag|genus|manufacturer|model|name:etymology|network|operator|species|subject"
-
   def format_key(key)
     if url = wiki_link("key", key)
       link_to h(key), url, :title => t("browse.tag_details.wiki_link.key", :key => key)
@@ -79,7 +75,8 @@ module BrowseTagsHelper
     return nil if %r{^https?://}.match?(value)
 
     case key
-    when "wikipedia", /^(#{SECONDARY_WIKI_PREFIXES}):wikipedia/o
+    # Accept `wikipedia` and secondary Wikipedia links as keys
+    when "wikipedia", /^[a-z_]+:wikipedia/o
       lang = "en"
     # This regex should match Wikipedia language codes, everything
     # from de to zh-classical
@@ -121,8 +118,8 @@ module BrowseTagsHelper
         :url => "https://www.wikidata.org/entity/#{value}?uselang=#{I18n.locale}",
         :title => value
       }]
-    # Key has to be one of the accepted wikidata-tags
-    elsif key =~ /(#{SECONDARY_WIKI_PREFIXES}):wikidata/o &&
+    # Accept secondary Wikidata links as keys
+    elsif key =~ /[a-z_]+:wikidata/o &&
           # Value has to be a semicolon-separated list of wikidata-IDs (whitespaces allowed before and after semicolons)
           value =~ /^[Qq][1-9][0-9]*(\s*;\s*[Qq][1-9][0-9]*)*$/
       # Splitting at every semicolon to get a separate hash for each wikidata-ID
@@ -134,7 +131,7 @@ module BrowseTagsHelper
   end
 
   def wikimedia_commons_link(key, value)
-    if key == "wikimedia_commons" && value =~ /^(file|category):([^#]+)/i
+    if /([a-z_]+:)?wikimedia_commons/.match?(key) && value =~ /^(file|category):([^#]+)/i
       namespace = Regexp.last_match(1)
       title = Regexp.last_match(2)
       return {

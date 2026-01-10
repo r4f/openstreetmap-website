@@ -156,7 +156,8 @@ class BrowseTagsHelperTest < ActionView::TestCase
 
     # Not anything is accepted as prefix (only limited set)
     links = wikidata_links("anything:wikidata", "Q13")
-    assert_nil links
+    assert_equal "https://www.wikidata.org/entity/Q13?uselang=en", links[0][:url]
+    assert_equal "Q13", links[0][:title]
 
     # This for example is an allowed key
     links = wikidata_links("operator:wikidata", "Q24")
