@@ -130,7 +130,9 @@ module BrowseTagsHelper
 
     # matches everything up to potential # and throw away the rest.
     # In case there is a link to an anchor in the Wikimedia Commons page. We will ignore that, as it is not really standard to link to anchors.
-    value_re = /\A(?<namespace>file|category):(?<title>[^#]+)/i
+    # OSM Wiki (https://wiki.openstreetmap.org/wiki/Key:wikimedia_commons) states value syntax as `File:xxxxxx.xxx / Category:xxxxx`.
+    # Hence we only accept these two namespaces.
+    value_re = /\A(?<namespace>File|Category):(?<title>[^#]+)/i
     return nil unless value_re.match?(value)
 
     match = value_re.match(value)
