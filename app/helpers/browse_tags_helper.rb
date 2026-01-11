@@ -124,7 +124,9 @@ module BrowseTagsHelper
           value =~ /^[Qq][1-9][0-9]*(\s*;\s*[Qq][1-9][0-9]*)*$/
       # Splitting at every semicolon to get a separate hash for each wikidata-ID
       return value.split(";").map do |id|
-        { :title => id, :url => "https://www.wikidata.org/entity/#{id.strip}?uselang=#{I18n.locale}" }
+        # In the URL, normalize Wikidata ID to uppercase and without leading and trailing spaces,
+        # while keeping the display text the original value as in the OSM element.
+        { :title => id, :url => "https://www.wikidata.org/entity/#{id.strip.capitalize}?uselang=#{I18n.locale}" }
       end
     end
     nil
