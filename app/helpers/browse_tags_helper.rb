@@ -94,7 +94,7 @@ module BrowseTagsHelper
       title = matches.named_captures()["title"]
       section = matches.named_captures()["section"]
 
-      url = "https://#{page_lang}.wikipedia.org/wiki/#{wiki_encode(title)}?uselang=#{I18n.locale}"
+      url = "https://#{page_lang.downcase}.wikipedia.org/wiki/#{wiki_encode(title)}?uselang=#{I18n.locale}"
       url += "##{wiki_encode(section)}" if section
       {:url => url, :title => wikipedia_value}
     end
