@@ -10,9 +10,12 @@ module BrowseTagsHelper
   end
 
   def format_value(key, value)
-    # IMPORTANT: Note that wikipedia_links() and wikidata_links() each return an array of hashes,
-    # unlike for example wikimedia_commons_link(), which just returns one such hash.
-    if wp = wikipedia_links(key, value)
+    if /\Afixme/i.match?(key)
+      # Values of fixme tags don't need to be parsed and linkified.
+      h(value)
+    elsif wp = wikipedia_links(key, value)
+      # IMPORTANT: Note that wikipedia_links() and wikidata_links() each return an array of hashes,
+      # unlike for example wikimedia_commons_link(), which just returns one such hash.
       wp = wp.map do |w|
         link_to(h(w[:title]), w[:url], :title => t("browse.tag_details.wikipedia_link", :page => w[:title]))
       end
