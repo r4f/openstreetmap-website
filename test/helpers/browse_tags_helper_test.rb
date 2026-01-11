@@ -219,6 +219,15 @@ class BrowseTagsHelperTest < ActionView::TestCase
     assert_equal "https://de.wikipedia.org/wiki/Test?uselang=en", links[0][:url]
     assert_equal "de:Test", links[0][:title]
 
+    # Wrong capitalization of language prefixes is corrected in the link URL
+    links = wikipedia_links("wikipedia", "DE:Test")
+    assert_equal "https://de.wikipedia.org/wiki/Test?uselang=en", links[0][:url]
+    assert_equal "DE:Test", links[0][:title]
+
+    links = wikipedia_links("wikipedia", "dE:Test")
+    assert_equal "https://de.wikipedia.org/wiki/Test?uselang=en", links[0][:url]
+    assert_equal "dE:Test", links[0][:title]
+
     links = wikipedia_links("wikipedia:fr", "Portsea")
     assert_equal 1, links.length
     assert_equal "https://fr.wikipedia.org/wiki/Portsea?uselang=en", links[0][:url]

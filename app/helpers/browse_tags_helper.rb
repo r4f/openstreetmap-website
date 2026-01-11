@@ -92,7 +92,8 @@ module BrowseTagsHelper
 
       # In this regex, the prefix matches Wikipedia language codes as above
       if wiki_value =~ /^([a-z-]{2,12}):(.+)$/i
-        page_lang = Regexp.last_match(1)
+        # While accepting any case, the language code in the URL shall be in the standard (lower) capitalization.
+        page_lang = Regexp.last_match(1).downcase
         title_section = Regexp.last_match(2)
       else
         page_lang = lang
