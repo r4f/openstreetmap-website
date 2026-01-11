@@ -154,24 +154,21 @@ class BrowseTagsHelperTest < ActionView::TestCase
 
     ### Prefixed wikidata-tags
 
-    # Not anything is accepted as prefix (only limited set)
-    links = wikidata_links("anything:wikidata", "Q13")
-    assert_equal "https://www.wikidata.org/entity/Q13?uselang=en", links[0][:url]
-    assert_equal "Q13", links[0][:title]
-
+    # Anything containing letters and underscores is accepted as prefix
     # This for example is an allowed key
     links = wikidata_links("operator:wikidata", "Q24")
     assert_equal "https://www.wikidata.org/entity/Q24?uselang=en", links[0][:url]
     assert_equal "Q24", links[0][:title]
 
-    # This verified buried is working
-    links = wikidata_links("buried:wikidata", "Q24")
-    assert_equal "https://www.wikidata.org/entity/Q24?uselang=en", links[0][:url]
-    assert_equal "Q24", links[0][:title]
+    # Prefix with underscore
+    links = wikidata_links("royal_cypher:wikidata", "Q33102113")
+    assert_equal "https://www.wikidata.org/entity/Q33102113?uselang=en", links[0][:url]
+    assert_equal "Q33102113", links[0][:title]
 
-    links = wikidata_links("species:wikidata", "Q26899")
-    assert_equal "https://www.wikidata.org/entity/Q26899?uselang=en", links[0][:url]
-    assert_equal "Q26899", links[0][:title]
+    # Normalization of the value
+    links = wikidata_links("anything:wikidata", "q42")
+    assert_equal "https://www.wikidata.org/entity/Q42?uselang=en", links[0][:url]
+    assert_equal "q42", links[0][:title]
 
     # Another allowed key, this time with multiple values and I18n
     I18n.with_locale "dsb" do
