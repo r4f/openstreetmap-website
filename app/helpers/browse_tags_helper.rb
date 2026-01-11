@@ -114,13 +114,12 @@ module BrowseTagsHelper
     # The simple wikidata-tag is limited to only one value, however we don't need to care.
     value.split(";").map do |wd_id|
       # normalize
-      wd_id = wd_id.strip.upcase
+      wd_id_normalized = wd_id.strip.upcase
 
       # Give up if any of the semicolon-separated values does not meet expectation.
-      return nil unless /\AQ[1-9][0-9]*\z/o.match?(wd_id)
+      return nil unless /\AQ[1-9][0-9]*\z/o.match?(wd_id_normalized)
 
-      puts wd_id
-      {:url => "https://wikidata.org/entity/#{wd_id}?uselang=#{I18n.locale}"}
+      {:url => "https://wikidata.org/entity/#{wd_id_normalized}?uselang=#{I18n.locale}", :title =>wd_id}
     end
   end
 
