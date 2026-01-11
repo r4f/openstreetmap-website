@@ -119,7 +119,7 @@ module BrowseTagsHelper
       # Give up if any of the semicolon-separated values does not meet expectation.
       return nil unless /\AQ[1-9][0-9]*\z/o.match?(wd_id_normalized)
 
-      {:url => "https://wikidata.org/entity/#{wd_id_normalized}?uselang=#{I18n.locale}", :title =>wd_id}
+      {:url => "https://www.wikidata.org/entity/#{wd_id_normalized}?uselang=#{I18n.locale}", :title =>wd_id}
     end
   end
 
