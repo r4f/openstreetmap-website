@@ -87,10 +87,8 @@ module BrowseTagsHelper
 
     # Match all semicolon-separated Wikipedia links
     value.split(";").map do |wikipedia_value|
-      wikipedia_value = wikipedia_value.strip
-
       value_re = /\A((?<lang>[a-z-]{2,12}):)?(?<title>[^#]+)(#(?<section>.+)?)?\z/oi
-      matches = value_re.match(wikipedia_value)
+      matches = value_re.match(wikipedia_value.strip)
 
       page_lang = matches.named_captures()["lang"] || lang
       title = matches.named_captures()["title"]
@@ -98,7 +96,7 @@ module BrowseTagsHelper
 
       url = "https://#{page_lang}.wikipedia.org/wiki/#{wiki_encode(title)}?uselang=#{I18n.locale}"
       url += "##{wiki_encode(section)}" if section
-      {:url => url, :title => title}
+      {:url => url, :title => wikipedia_value}
     end
   end
 
