@@ -202,6 +202,13 @@ class BrowseTagsHelperTest < ActionView::TestCase
     links = wikipedia_links("wikipedia", "https://en.wikipedia.org/wiki/Full%20URL")
     assert_nil links
 
+    links = wikipedia_links("wikipedia", "Https://en.wikipedia.org/wiki/Full%20URL")
+    assert_nil links
+
+    links = wikipedia_links("wikipedia", "HTTPS://en.wikipedia.org/wiki/Full%20URL")
+    assert_nil links
+
+
     links = wikipedia_links("wikipedia", "Test")
     assert_equal 1, links.length
     assert_equal "https://en.wikipedia.org/wiki/Test?uselang=en", links[0][:url]

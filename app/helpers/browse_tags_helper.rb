@@ -72,7 +72,7 @@ module BrowseTagsHelper
 
   def wikipedia_links(key, value)
     # Some k/v's are wikipedia=http://en.wikipedia.org/wiki/Full%20URL
-    return nil if %r{^https?://}.match?(value)
+    return nil if %r{^https?://}i.match?(value)
 
     case key
     # Accept `wikipedia` and secondary Wikipedia links as keys
