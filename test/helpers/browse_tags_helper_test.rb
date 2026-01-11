@@ -63,7 +63,7 @@ class BrowseTagsHelperTest < ActionView::TestCase
     assert_select dom, "button.wdt-preview>svg>path[fill]", 1
 
     html = format_value("wikimedia_commons", "File:Test.jpg")
-    assert_dom_equal "<a title=\"The File:Test.jpg item on Wikimedia Commons\" href=\"//commons.wikimedia.org/wiki/File:Test.jpg?uselang=en\">File:Test.jpg</a>", html
+    assert_dom_equal "<a title=\"The File:Test.jpg item on Wikimedia Commons\" href=\"https://commons.wikimedia.org/wiki/File:Test.jpg?uselang=en\">File:Test.jpg</a>", html
 
     html = format_value("mapillary", "123;https://example.com")
     assert_dom_equal "<a rel=\"nofollow\" href=\"https://www.mapillary.com/app/?pKey=123\">123</a>;<a href=\"https://example.com\" rel=\"nofollow\" dir=\"auto\">https://example.com</a>",
@@ -141,59 +141,57 @@ class BrowseTagsHelperTest < ActionView::TestCase
     # A valid value
     links = wikidata_links("wikidata", "Q42")
     assert_equal 1, links.length
-    assert_equal "//www.wikidata.org/entity/Q42?uselang=en", links[0][:url]
+    assert_equal "https://www.wikidata.org/entity/Q42?uselang=en", links[0][:url]
     assert_equal "Q42", links[0][:title]
 
     # the language of the wikidata-page should match the current locale
     I18n.with_locale "zh-CN" do
       links = wikidata_links("wikidata", "Q1234")
       assert_equal 1, links.length
-      assert_equal "//www.wikidata.org/entity/Q1234?uselang=zh-CN", links[0][:url]
+      assert_equal "https://www.wikidata.org/entity/Q1234?uselang=zh-CN", links[0][:url]
       assert_equal "Q1234", links[0][:title]
     end
 
     ### Prefixed wikidata-tags
 
-    # Not anything is accepted as prefix (only limited set)
-    links = wikidata_links("anything:wikidata", "Q13")
-    assert_nil links
-
+    # Anything containing letters and underscores is accepted as prefix
     # This for example is an allowed key
     links = wikidata_links("operator:wikidata", "Q24")
-    assert_equal "//www.wikidata.org/entity/Q24?uselang=en", links[0][:url]
+    assert_equal "https://www.wikidata.org/entity/Q24?uselang=en", links[0][:url]
     assert_equal "Q24", links[0][:title]
 
-    # This verified buried is working
-    links = wikidata_links("buried:wikidata", "Q24")
-    assert_equal "//www.wikidata.org/entity/Q24?uselang=en", links[0][:url]
-    assert_equal "Q24", links[0][:title]
+    # Prefix with underscore
+    links = wikidata_links("royal_cypher:wikidata", "Q33102113")
+    assert_equal "https://www.wikidata.org/entity/Q33102113?uselang=en", links[0][:url]
+    assert_equal "Q33102113", links[0][:title]
 
-    links = wikidata_links("species:wikidata", "Q26899")
-    assert_equal "//www.wikidata.org/entity/Q26899?uselang=en", links[0][:url]
-    assert_equal "Q26899", links[0][:title]
+    # Normalization of the value
+    links = wikidata_links("anything:wikidata", "q42")
+    assert_equal "https://www.wikidata.org/entity/Q42?uselang=en", links[0][:url]
+    assert_equal "q42", links[0][:title]
 
     # Another allowed key, this time with multiple values and I18n
     I18n.with_locale "dsb" do
       links = wikidata_links("brand:wikidata", "Q936;Q2013;Q1568346")
       assert_equal 3, links.length
-      assert_equal "//www.wikidata.org/entity/Q936?uselang=dsb", links[0][:url]
+      assert_equal "https://www.wikidata.org/entity/Q936?uselang=dsb", links[0][:url]
       assert_equal "Q936", links[0][:title]
-      assert_equal "//www.wikidata.org/entity/Q2013?uselang=dsb", links[1][:url]
+      assert_equal "https://www.wikidata.org/entity/Q2013?uselang=dsb", links[1][:url]
       assert_equal "Q2013", links[1][:title]
-      assert_equal "//www.wikidata.org/entity/Q1568346?uselang=dsb", links[2][:url]
+      assert_equal "https://www.wikidata.org/entity/Q1568346?uselang=dsb", links[2][:url]
       assert_equal "Q1568346", links[2][:title]
     end
 
     # and now with whitespaces...
     links = wikidata_links("subject:wikidata", "Q6542248 ;\tQ180\n ;\rQ364\t\n\r ;\nQ4006")
     assert_equal 4, links.length
-    assert_equal "//www.wikidata.org/entity/Q6542248?uselang=en", links[0][:url]
+    assert_equal "https://www.wikidata.org/entity/Q6542248?uselang=en", links[0][:url]
     assert_equal "Q6542248 ", links[0][:title]
-    assert_equal "//www.wikidata.org/entity/Q180?uselang=en", links[1][:url]
+    assert_equal "https://www.wikidata.org/entity/Q180?uselang=en", links[1][:url]
     assert_equal "\tQ180\n ", links[1][:title]
-    assert_equal "//www.wikidata.org/entity/Q364?uselang=en", links[2][:url]
+    assert_equal "https://www.wikidata.org/entity/Q364?uselang=en", links[2][:url]
     assert_equal "\rQ364\t\n\r ", links[2][:title]
-    assert_equal "//www.wikidata.org/entity/Q4006?uselang=en", links[3][:url]
+    assert_equal "https://www.wikidata.org/entity/Q4006?uselang=en", links[3][:url]
     assert_equal "\nQ4006", links[3][:title]
   end
 
@@ -204,6 +202,13 @@ class BrowseTagsHelperTest < ActionView::TestCase
     links = wikipedia_links("wikipedia", "https://en.wikipedia.org/wiki/Full%20URL")
     assert_nil links
 
+    links = wikipedia_links("wikipedia", "Https://en.wikipedia.org/wiki/Full%20URL")
+    assert_nil links
+
+    links = wikipedia_links("wikipedia", "HTTPS://en.wikipedia.org/wiki/Full%20URL")
+    assert_nil links
+
+
     links = wikipedia_links("wikipedia", "Test")
     assert_equal 1, links.length
     assert_equal "https://en.wikipedia.org/wiki/Test?uselang=en", links[0][:url]
@@ -213,6 +218,15 @@ class BrowseTagsHelperTest < ActionView::TestCase
     assert_equal 1, links.length
     assert_equal "https://de.wikipedia.org/wiki/Test?uselang=en", links[0][:url]
     assert_equal "de:Test", links[0][:title]
+
+    # Wrong capitalization of language prefixes is corrected in the link URL
+    links = wikipedia_links("wikipedia", "DE:Test")
+    assert_equal "https://de.wikipedia.org/wiki/Test?uselang=en", links[0][:url]
+    assert_equal "DE:Test", links[0][:title]
+
+    links = wikipedia_links("wikipedia", "dE:Test")
+    assert_equal "https://de.wikipedia.org/wiki/Test?uselang=en", links[0][:url]
+    assert_equal "dE:Test", links[0][:title]
 
     links = wikipedia_links("wikipedia:fr", "Portsea")
     assert_equal 1, links.length
@@ -303,24 +317,33 @@ class BrowseTagsHelperTest < ActionView::TestCase
     assert_nil link
 
     link = wikimedia_commons_link("wikimedia_commons", "File:Test.jpg")
-    assert_equal "//commons.wikimedia.org/wiki/File:Test.jpg?uselang=en", link[:url]
+    assert_equal "https://commons.wikimedia.org/wiki/File:Test.jpg?uselang=en", link[:url]
     assert_equal "File:Test.jpg", link[:title]
 
     link = wikimedia_commons_link("wikimedia_commons", "Category:Test_Category")
-    assert_equal "//commons.wikimedia.org/wiki/Category:Test_Category?uselang=en", link[:url]
+    assert_equal "https://commons.wikimedia.org/wiki/Category:Test_Category?uselang=en", link[:url]
     assert_equal "Category:Test_Category", link[:title]
 
     link = wikimedia_commons_link("wikimedia_commons", "Category:What If? (Bonn)")
-    assert_equal "//commons.wikimedia.org/wiki/Category:What%20If%3F%20%28Bonn%29?uselang=en", link[:url]
+    assert_equal "https://commons.wikimedia.org/wiki/Category:What%20If%3F%20%28Bonn%29?uselang=en", link[:url]
     assert_equal "Category:What If? (Bonn)", link[:title]
 
     link = wikimedia_commons_link("wikimedia_commons", "File:Corsica-vizzavona-abri-southwell.jpg#mediaviewer/File:Corsica-vizzavona-abri-southwell.jpg")
-    assert_equal "//commons.wikimedia.org/wiki/File:Corsica-vizzavona-abri-southwell.jpg?uselang=en", link[:url]
+    assert_equal "https://commons.wikimedia.org/wiki/File:Corsica-vizzavona-abri-southwell.jpg?uselang=en", link[:url]
     assert_equal "File:Corsica-vizzavona-abri-southwell.jpg#mediaviewer/File:Corsica-vizzavona-abri-southwell.jpg", link[:title]
+
+    # Reject namespaces other than File and Category
+    link = wikimedia_commons_link("wikimedia_commons", "Commons:Featured pictures")
+    assert_nil link
+
+    # Secondary Wikimedia Commons links
+    link = wikimedia_commons_link("artist:wikimedia_commons", "File:Unknown Artist Portrait.jpg")
+    assert_equal "https://commons.wikimedia.org/wiki/File:Unknown%20Artist%20Portrait.jpg?uselang=en", link[:url]
+    assert_equal "File:Unknown Artist Portrait.jpg", link[:title]
 
     I18n.with_locale "pt-BR" do
       link = wikimedia_commons_link("wikimedia_commons", "File:Test.jpg")
-      assert_equal "//commons.wikimedia.org/wiki/File:Test.jpg?uselang=pt-BR", link[:url]
+      assert_equal "https://commons.wikimedia.org/wiki/File:Test.jpg?uselang=pt-BR", link[:url]
       assert_equal "File:Test.jpg", link[:title]
     end
 
