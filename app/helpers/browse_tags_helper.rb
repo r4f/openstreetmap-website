@@ -138,7 +138,7 @@ module BrowseTagsHelper
 
     return {
       :url => "https://commons.wikimedia.org/wiki/#{namespace}:#{u title}?uselang=#{I18n.locale}",
-      :title => title
+      :title => value
     }
   end
 
