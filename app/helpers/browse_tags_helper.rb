@@ -1,10 +1,6 @@
 # frozen_string_literal: true
 
 module BrowseTagsHelper
-  # https://wiki.openstreetmap.org/wiki/Key:wikipedia#Secondary_Wikipedia_links
-  # https://wiki.openstreetmap.org/wiki/Key:wikidata#Secondary_Wikidata_links
-  SECONDARY_WIKI_PREFIXES = "architect|artist|brand|buried|flag|genus|manufacturer|model|name:etymology|network|operator|species|subject"
-
   def format_key(key)
     if url = wiki_link("key", key)
       link_to h(key), url, :title => t("browse.tag_details.wiki_link.key", :key => key)
@@ -14,14 +10,17 @@ module BrowseTagsHelper
   end
 
   def format_value(key, value)
-    if wp = wikipedia_links(key, value)
+    if /\Afixme/i.match?(key)
+      # Values of fixme tags don't need to be parsed and linkified.
+      h(value)
+    elsif wp = wikipedia_links(key, value)
+      # IMPORTANT: Note that wikipedia_links() and wikidata_links() each return an array of hashes,
+      # unlike for example wikimedia_commons_link(), which just returns one such hash.
       wp = wp.map do |w|
         link_to(h(w[:title]), w[:url], :title => t("browse.tag_details.wikipedia_link", :page => w[:title]))
       end
       safe_join(wp, ";")
     elsif wdt = wikidata_links(key, value)
-      # IMPORTANT: Note that wikidata_links() returns an array of hashes, unlike for example wikipedia_link(),
-      # which just returns one such hash.
       svg = button_tag :type => "button", :role => "button", :class => "btn btn-link float-end d-flex m-1 mt-0 me-n1 border-0 p-0 wdt-preview", :data => { :qids => wdt.pluck(:title) } do
         tag.svg :width => 27, :height => 16 do
           concat tag.title t("browse.tag_details.wikidata_preview", :count => wdt.length)
@@ -75,37 +74,29 @@ module BrowseTagsHelper
   end
 
   def wikipedia_links(key, value)
+    # This regex should match all Wikipedia language codes, everything
+    # from ab (Abkhaz) to zh-classical (Classical Chinese)
+    key_re = /\A([a-z_:]+:)?wikipedia(:(?<lang>[a-zA-Z-]{2,12}))?\z/o
+
+    # Accept `wikipedia` and secondary Wikipedia links as keys
+    return nil unless key_re.match?(key)
     # Some k/v's are wikipedia=http://en.wikipedia.org/wiki/Full%20URL
-    return nil if %r{^https?://}.match?(value)
+    return nil if %r{^https?://}i.match?(value)
 
-    case key
-    when "wikipedia", /^(#{SECONDARY_WIKI_PREFIXES}):wikipedia/o
-      lang = "en"
-    when /^wikipedia:(\S+)$/
-      lang = Regexp.last_match(1)
-    else
-      return nil
-    end
+    lang = key_re.match(key).named_captures()["lang"] || "en"
 
-    # Value could be a semicolon-separated list of Wikipedia pages
-    value.split(";").map do |wiki_value|
-      wiki_value = wiki_value.strip
+    # Match all semicolon-separated Wikipedia links
+    value.split(";").map do |wikipedia_value|
+      value_re = /\A((?<lang>[a-z-]{2,12}):)?(?<title>[^#]+)(#(?<section>.+)?)?\z/oi
+      matches = value_re.match(wikipedia_value.strip)
 
-      # This regex should match Wikipedia language codes, everything
-      # from de to zh-classical
-      if wiki_value =~ /^([a-z-]{2,12}):(.+)$/i
-        page_lang = Regexp.last_match(1)
-        title_section = Regexp.last_match(2)
-      else
-        page_lang = lang
-        title_section = wiki_value
-      end
+      page_lang = matches.named_captures()["lang"] || lang
+      title = matches.named_captures()["title"]
+      section = matches.named_captures()["section"]
 
-      title, section = title_section.split("#", 2)
-      url = "https://#{page_lang}.wikipedia.org/wiki/#{wiki_encode(title)}?uselang=#{I18n.locale}"
+      url = "https://#{page_lang.downcase}.wikipedia.org/wiki/#{wiki_encode(title)}?uselang=#{I18n.locale}"
       url += "##{wiki_encode(section)}" if section
-
-      { :url => url, :title => wiki_value }
+      {:url => url, :title => wikipedia_value}
     end
   end
 
@@ -114,34 +105,41 @@ module BrowseTagsHelper
   end
 
   def wikidata_links(key, value)
-    # The simple wikidata-tag (this is limited to only one value)
-    if key == "wikidata" && value =~ /^[Qq][1-9][0-9]*$/
-      return [{
-        :url => "//www.wikidata.org/entity/#{value}?uselang=#{I18n.locale}",
-        :title => value
-      }]
-    # Key has to be one of the accepted wikidata-tags
-    elsif key =~ /(#{SECONDARY_WIKI_PREFIXES}):wikidata/o &&
-          # Value has to be a semicolon-separated list of wikidata-IDs (whitespaces allowed before and after semicolons)
-          value =~ /^[Qq][1-9][0-9]*(\s*;\s*[Qq][1-9][0-9]*)*$/
-      # Splitting at every semicolon to get a separate hash for each wikidata-ID
-      return value.split(";").map do |id|
-        { :title => id, :url => "//www.wikidata.org/entity/#{id.strip}?uselang=#{I18n.locale}" }
-      end
+    # Accept simple and secondary Wikidata links as keys
+    return nil unless /\A([a-z_:]+:)?wikidata\z/.match?(key)
+
+    # Value has to be a semicolon-separated list of wikidata-IDs (whitespaces allowed before and after semicolons)
+    # The simple wikidata-tag is limited to only one value, however we don't need to care.
+    value.split(";").map do |wd_id|
+      # normalize
+      wd_id_normalized = wd_id.strip.upcase
+
+      # Give up if any of the semicolon-separated values does not meet expectation.
+      return nil unless /\AQ[1-9][0-9]*\z/o.match?(wd_id_normalized)
+
+      {:url => "https://www.wikidata.org/entity/#{wd_id_normalized}?uselang=#{I18n.locale}", :title =>wd_id}
     end
-    nil
   end
 
   def wikimedia_commons_link(key, value)
-    if key == "wikimedia_commons" && value =~ /^(file|category):([^#]+)/i
-      namespace = Regexp.last_match(1)
-      title = Regexp.last_match(2)
-      return {
-        :url => "//commons.wikimedia.org/wiki/#{namespace}:#{u title}?uselang=#{I18n.locale}",
-        :title => value
-      }
-    end
-    nil
+    # Allow any simple and secondary Wikimedia Commons link.
+    return nil unless /\A([a-z_:]+:)?wikimedia_commons\z/.match?(key)
+
+    # matches everything up to potential # and throw away the rest.
+    # In case there is a link to an anchor in the Wikimedia Commons page. We will ignore that, as it is not really standard to link to anchors.
+    # OSM Wiki (https://wiki.openstreetmap.org/wiki/Key:wikimedia_commons) states value syntax as `File:xxxxxx.xxx / Category:xxxxx`.
+    # Hence we only accept these two namespaces.
+    value_re = /\A(?<namespace>File|Category):(?<title>[^#]+)/i
+    return nil unless value_re.match?(value)
+
+    match = value_re.match(value)
+    namespace = match.named_captures()["namespace"].capitalize
+    title = match.named_captures()["title"]
+
+    return {
+      :url => "https://commons.wikimedia.org/wiki/#{namespace}:#{u title}?uselang=#{I18n.locale}",
+      :title => value
+    }
   end
 
   def tag2link_link(key, value)
